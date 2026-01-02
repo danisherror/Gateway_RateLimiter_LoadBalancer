@@ -7,7 +7,7 @@ gateway:
 
 rate-limiter:
   capacity: ${RATE_LIMIT_CAPACITY:10}
-  refill-tokens: ${RATE_LIMIT_REFILL:10}
+  refill-tokens: ${RATE_LIMIT_REFILL:5}
   refill-duration: ${RATE_LIMIT_DURATION:60}
 
 healthcheck:
@@ -17,5 +17,5 @@ healthcheck:
 
 spring:
   redis:
-    host: ${REDIS_HOST}
-    port: ${REDIS_PORT}
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
