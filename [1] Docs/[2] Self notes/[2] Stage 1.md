@@ -130,3 +130,5 @@ docker rm gateway
 
 ✅ `stop` just stops it; `rm` deletes the container so you can start fresh.
 
+
+---

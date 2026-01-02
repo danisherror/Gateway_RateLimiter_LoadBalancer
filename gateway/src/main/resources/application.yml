@@ -2,4 +2,10 @@ server:
   port: 8080
 
 gateway:
-  backend-url: http://localhost:8081
+  backend-url: ${BACKEND_URL:http://localhost:8081}
+  allowed-origins: ${FRONTEND_URL:http://localhost:3000}
+
+rate-limiter:
+  capacity: ${RATE_LIMIT_CAPACITY:100}
+  refill-tokens: ${RATE_LIMIT_REFILL:100}
+  refill-duration: ${RATE_LIMIT_DURATION:60}
