@@ -13,23 +13,20 @@ import reactor.core.publisher.Mono;
 public class GatewayController {
 
     private final WebClient webClient;
-    private final String backendUrl;
+    private final RoundRobinService roundRobinService;
 
-    public GatewayController(
-            WebClient webClient,
-            @Value("${gateway.backend-url}") String backendUrl) {
+    public GatewayController(WebClient webClient, RoundRobinService roundRobinService) {
         this.webClient = webClient;
-        this.backendUrl = backendUrl;
+        this.roundRobinService = roundRobinService;
     }
 
     @GetMapping("/api/**")
     public Mono<ResponseEntity<String>> forward(ServerHttpRequest request) {
+        String backendUrl = roundRobinService.getNextBackend();
 
-        String path = request.getURI().getPath(); // /api/hello
+        String path = request.getURI().getPath();
         String query = request.getURI().getQuery();
-
-        String targetUrl = backendUrl + path +
-                (query != null ? "?" + query : "");
+        String targetUrl = backendUrl + path + (query != null ? "?" + query : "");
 
         return webClient.get()
                 .uri(targetUrl)

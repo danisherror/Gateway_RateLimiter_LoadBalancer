@@ -2,7 +2,7 @@ server:
   port: 8080
 
 gateway:
-  backend-url: ${BACKEND_URL:http://localhost:8081}
+  backend-urls: ${BACKEND_URLS:http://localhost:8081,http://localhost:8082,http://localhost:8083}
   allowed-origins: ${FRONTEND_URL:http://localhost:3000}
 
 rate-limiter:
