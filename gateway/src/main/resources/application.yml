@@ -14,3 +14,8 @@ healthcheck:
   interval: ${HEALTHCHECK_INTERVAL:5000}          # ms
   failure-threshold: ${HEALTHCHECK_FAILURE_THRESHOLD:3}
   success-threshold: ${HEALTHCHECK_SUCCESS_THRESHOLD:2}
+
+spring:
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
