@@ -11,7 +11,7 @@
 -----
 # Stage 2: Load balancer
 ---
-- [ ] Given two servers distribute the request among them( round robin algo)
+- [x] Given two servers distribute the request among them( round robin algo)
 
 ---
 # Stage 3: Rate Limiter
