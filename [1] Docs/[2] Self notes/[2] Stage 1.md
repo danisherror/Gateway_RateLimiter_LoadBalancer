@@ -1,6 +1,8 @@
 
-Perfect ✅  
-Your build is **100% successful**.
+
+```
+mvn clean package
+```
 
 You have this file (this is what Docker needs):
 
