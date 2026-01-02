@@ -9,3 +9,8 @@ rate-limiter:
   capacity: ${RATE_LIMIT_CAPACITY:100}
   refill-tokens: ${RATE_LIMIT_REFILL:100}
   refill-duration: ${RATE_LIMIT_DURATION:60}
+
+healthcheck:
+  interval: ${HEALTHCHECK_INTERVAL:5000}          # ms
+  failure-threshold: ${HEALTHCHECK_FAILURE_THRESHOLD:3}
+  success-threshold: ${HEALTHCHECK_SUCCESS_THRESHOLD:2}
