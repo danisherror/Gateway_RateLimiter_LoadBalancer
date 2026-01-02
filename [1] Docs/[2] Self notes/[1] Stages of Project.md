@@ -1,11 +1,11 @@
 
 # Stage 1: Basic working of project 
 ---
-- [ ] gather the springboot requirement
-- [ ] start the springboot and take the request from frontend
-- [ ] convert springboot to docker and allow only request from the certain url from frontend
-- [ ] springboot should redirect the request to server
-- [ ] convert springboot to docket and allow request to redirect to backend url
+- [x] gather the springboot requirement
+- [x] start the springboot and take the request from frontend
+- [x] convert springboot to docker and allow only request from the certain url from frontend
+- [x] springboot should redirect the request to server
+- [x] convert springboot to docket and allow request to redirect to backend url
 
 
 -----
