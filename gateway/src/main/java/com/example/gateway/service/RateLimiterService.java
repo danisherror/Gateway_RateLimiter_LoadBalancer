@@ -1,5 +1,6 @@
 package com.example.gateway.service;
 
+import com.example.gateway.config.RateLimiterProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -7,7 +8,6 @@ import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
 import java.time.Instant;
 
 @Service
@@ -16,62 +16,75 @@ public class RateLimiterService {
     private static final Logger log = LoggerFactory.getLogger(RateLimiterService.class);
 
     private final ReactiveRedisTemplate<String, String> redisTemplate;
-
-    private static final int LIMIT = 10;
-    private static final Duration WINDOW = Duration.ofSeconds(60); // 1 minute
+    private final RateLimiterProperties props;
 
     public RateLimiterService(
             @Qualifier("reactiveRedisTemplate")
-            ReactiveRedisTemplate<String, String> redisTemplate
+            ReactiveRedisTemplate<String, String> redisTemplate,
+            RateLimiterProperties props
     ) {
         this.redisTemplate = redisTemplate;
+        this.props = props;
     }
 
     public Mono<Boolean> isAllowed(String key) {
-        String redisKey = "rate:" + key;
+        String tokensKey = "bucket:tokens:" + key;
+        String timeKey = "bucket:time:" + key;
 
-        log.debug("Rate limit check started for key={}", redisKey);
+        long now = Instant.now().getEpochSecond();
 
-        return redisTemplate.opsForValue()
-                .increment(redisKey)
-                .flatMap(count -> {
+        return redisTemplate.opsForValue().get(timeKey)
+                .defaultIfEmpty("0")
+                .flatMap(lastTimeStr -> {
 
-                    log.info("Rate counter for key={} is {}", redisKey, count);
+                    long lastTime = Long.parseLong(lastTimeStr);
+                    long elapsed = Math.max(0, now - lastTime);
 
-                    if (count == 1) {
-                        log.info("First request for key={}, setting expiry {} seconds",
-                                redisKey, WINDOW.getSeconds());
+                    long tokensToAdd =
+                            (elapsed * props.getRefillTokens()) / props.getRefillDuration();
 
-                        return redisTemplate.expire(redisKey, WINDOW)
-                                .thenReturn(true);
-                    }
+                    return redisTemplate.opsForValue()
+                            .get(tokensKey)
+                            .defaultIfEmpty(String.valueOf(props.getCapacity()))
+                            .flatMap(tokensStr -> {
 
-                    if (count <= LIMIT) {
-                        log.info("Request ALLOWED for key={} (count={}/{})",
-                                redisKey, count, LIMIT);
-                        return Mono.just(true);
-                    }
-
-                    // 🚫 BLOCKED: find retry time
-                    return redisTemplate.getExpire(redisKey)
-                            .defaultIfEmpty(Duration.ZERO)
-                            .map(ttl -> {
-                                Instant retryAt = Instant.now().plus(ttl);
-
-                                log.warn(
-                                        "Request BLOCKED for key={} (count={}/{}) | Retry after {} seconds at {}",
-                                        redisKey,
-                                        count,
-                                        LIMIT,
-                                        ttl.getSeconds(),
-                                        retryAt
+                                long currentTokens = Long.parseLong(tokensStr);
+                                long newTokens = Math.min(
+                                        props.getCapacity(),
+                                        currentTokens + tokensToAdd
                                 );
 
-                                return false;
+                                if (newTokens <= 0) {
+                                    long retryAfter =
+                                            props.getRefillDuration() -
+                                                    (elapsed % props.getRefillDuration());
+
+                                    log.warn(
+                                            "RATE LIMITED key={} | retry after {} sec",
+                                            key,
+                                            retryAfter
+                                    );
+
+                                    return Mono.just(false);
+                                }
+
+                                long remaining = newTokens - 1;
+
+                                log.info(
+                                        "Request allowed key={} | remaining tokens={}",
+                                        key,
+                                        remaining
+                                );
+
+                                return redisTemplate.opsForValue()
+                                        .set(tokensKey, String.valueOf(remaining))
+                                        .then(redisTemplate.opsForValue()
+                                                .set(timeKey, String.valueOf(now)))
+                                        .thenReturn(true);
                             });
                 })
                 .doOnError(ex ->
-                        log.error("Redis error during rate limiting for key={}", redisKey, ex)
+                        log.error("Rate limiter Redis error for key={}", key, ex)
                 )
                 .onErrorReturn(true); // fail-open
     }

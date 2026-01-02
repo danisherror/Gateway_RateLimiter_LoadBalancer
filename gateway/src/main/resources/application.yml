@@ -6,8 +6,8 @@ gateway:
   allowed-origins: ${FRONTEND_URL:http://localhost:3000}
 
 rate-limiter:
-  capacity: ${RATE_LIMIT_CAPACITY:100}
-  refill-tokens: ${RATE_LIMIT_REFILL:100}
+  capacity: ${RATE_LIMIT_CAPACITY:10}
+  refill-tokens: ${RATE_LIMIT_REFILL:10}
   refill-duration: ${RATE_LIMIT_DURATION:60}
 
 healthcheck:
